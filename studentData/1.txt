@@ -1,0 +1,1 @@
+{1: 'goodbye', 2: 'hola', 'kerberosHash': 1}
