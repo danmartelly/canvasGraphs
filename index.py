@@ -19,16 +19,18 @@ print '''
 </head>
 <body>
 	You are %(fullname)s
-	<div id='test'></div>
-	<div id='test2'></div>
+	<div id='test'></div><img id="answer1" src="lion.jpeg">
+	<div id='test2'></div><img id="answer2" src="lion.jpeg">
+
 </body>
 <script text="javascript/text">
 	window.onload = function () {
 		var s;
-		s = new SketchInterface(%(kerberosHash)s, 1, document.getElementById("test"), 600, 300);
+		s = new SketchInterface(%(kerberosHash)s, 1, document.getElementById("test"), 600, 300, document.getElementById('answer1'));
 		s.setAxes(-6, 6, 5, -5, 10, 1);	
-		s = new SketchInterface(%(kerberosHash)s, 2, document.getElementById("test2"), 600, 300);
+		s = new SketchInterface(%(kerberosHash)s, 2, document.getElementById("test2"), 600, 300, document.getElementById('answer2'));
 		s.setAxes(-1, 3, .5, -5, 10, 1);
+		s.labelAxes('xaxis', 'yaxis');
 
 	}
 </script>

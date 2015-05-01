@@ -29,7 +29,7 @@ var pointsBetween = function(x1,y1,x2,y2) {
 	return ans;
 };
 
-function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSetsAxes) {
+function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerElement, userSetsAxes) {
 	this.kerberosHash = kerberosHash;
 	this.problemID = problemID;
 	this.refDiv = refDiv;
@@ -47,8 +47,13 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSet
 	this.resetButton = null;
 	this.postForm = null;
 	this.submitButton = null;
+	this.toggleAnswer = null;
+	this.loadingImage = null;
+	this.userSetsAxes = userSetsAxes;
+	this.answerElement = answerElement;
 
 	this.makeElements = function() {
+		this.showAnswer(false);
 		this.refDiv.style.width = String(this.width + 70) + 'px';
 		this.refDiv.style.height = String(this.height + 70) + 'px';
 		this.refDiv.style.position = 'relative'
@@ -123,11 +128,36 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSet
 		this.submitButton.type = 'button';
 		this.submitButton.value = 'Submit';
 		this.postForm.appendChild(this.submitButton);
+		this.toggleAnswer = document.createElement('input');
+		this.toggleAnswer.type = 'button';
+		this.toggleAnswer.value = "Show Answer";
+		this.postForm.appendChild(this.toggleAnswer);
+		this.loadingImage = document.createElement('img');
+		this.loadingImage.src = 'loading.gif';
+		this.loadingImage.style.height = "15px";
+		this.postForm.appendChild(this.loadingImage);
+		this.showSaving(false);
 		this.postForm.style.position = 'absolute';
 		this.postForm.style.left = String(200) + 'px';
 		this.postForm.style.top = String(this.height + 50) + 'px';
 		this.refDiv.appendChild(this.postForm);
 	};
+
+	this.showAnswer = function(show) {
+		if (show) {
+			this.answerElement.style.display = "inline";
+		} else {
+			this.answerElement.style.display = "none";
+		}
+	}
+
+	this.showSaving = function(show) {
+		if (show) {
+			this.loadingImage.style.display = "inline";
+		} else {
+			this.loadingImage.style.display = "none";
+		}
+	}
 
 	this.setUpCanvas = function() {
 		var lastX = 0;
@@ -216,6 +246,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSet
 	this.setUpForm = function() {
 		var that = this;
 		this.submitButton.addEventListener("click", function(event) {
+			that.showSaving(true);
 			var saveData = JSON.stringify({cData: that.canvasImageData, recording: that.recordingArray});
 			$.post("sendData.py", {
 				kerberosHash: that.kerberosHash,
@@ -224,6 +255,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSet
 			},
 			function(data, status){
 				console.log(" Status: " + status + " for problemID: " + that.problemID);
+				that.showSaving(false);
 			});
 			console.log('doing swell');
 		});
@@ -233,6 +265,16 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSet
 			var ctx = that.canvas.getContext('2d');
 			ctx.clearRect(0,0,that.canvas.width, that.canvas.height);
 			that.canvasImageData = ctx.createImageData(that.canvas.width, that.canvas.height);
+		});
+		
+		this.toggleAnswer.addEventListener("click", function(event) {
+			if (this.value == "Show Answer") {
+				this.value = "Hide Answer";
+				that.showAnswer(true);
+			} else {
+				this.value = "Show Answer";
+				that.showAnswer(false);
+			}
 		});
 	}
 
@@ -355,6 +397,24 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, userSet
 		this.refreshCanvases();
 		this.recordChangeAxes(xmin, xmax, xstep, ymin, ymax, ystep);
 	}
+
+	this.labelAxes = function(xLabel, yLabel, fontSize) {
+		fontSize = typeof fontSize !== 'undefined' ? fontSize : 14;
+		fontSize = String(fontSize) + "px serif";
+		var ctx = this.xAxisCanvas.getContext('2d');
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'bottom';
+		ctx.font = fontSize;
+		ctx.fillText(xLabel, this.xAxisCanvas.width/2, this.xAxisCanvas.height);
+		ctx = this.yAxisCanvas.getContext('2d');
+		ctx.save();
+		ctx.rotate(Math.PI/2);
+		ctx.textAlign = 'center';
+		ctx.font = fontSize;
+		ctx.textBaseline = 'bottom';
+		ctx.fillText(yLabel, this.yAxisCanvas.height/2, 0);
+		ctx.restore();
+	};
 
 	//initialize
 	this.makeElements();
