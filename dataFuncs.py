@@ -24,6 +24,12 @@ def getStudentData(kerberosHash):
     f.close()
     return ans
 
+def extractText(filename):
+    f = open(filename, 'r')
+    s = "".join(f.readlines())
+    f.close()
+    return s
+
 def getStudentProblemData(kerberosHash, problemID):
     d = getStudentData(kerberosHash)
     return d.get(problemID, 'null')

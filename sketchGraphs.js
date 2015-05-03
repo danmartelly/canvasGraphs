@@ -29,10 +29,11 @@ var pointsBetween = function(x1,y1,x2,y2) {
 	return ans;
 };
 
-function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerElement, userSetsAxes) {
+function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerElement, userXAxis, userYAxis, imageURL) {
 	this.kerberosHash = kerberosHash;
 	this.problemID = problemID;
 	this.refDiv = refDiv;
+	this.imageCanvas = null;
 	this.guidelineCanvas = null;
 	this.canvas = null;
 	this.xAxisCanvas = null;
@@ -49,16 +50,45 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 	this.submitButton = null;
 	this.toggleAnswer = null;
 	this.loadingImage = null;
-	this.userSetsAxes = userSetsAxes;
+	this.userXAxis = userXAxis;
+	this.userYAxis = userYAxis;
+	this.axisForm = null;
+	this.setAxesButton = null;
 	this.answerElement = answerElement;
+	this.xmin = null;
+	this.xmax = null;
+	this.xstep = null;
+	this.ymin = null;
+	this.ymax = null;
+	this.ystep = null;
+	this.xlabel = "";
+	this.ylabel = "";
 
 	this.makeElements = function() {
 		this.showAnswer(false);
 		this.refDiv.style.width = String(this.width + 70) + 'px';
-		this.refDiv.style.height = String(this.height + 70) + 'px';
+		this.refDiv.style.height = String(this.height + 100) + 'px';
 		this.refDiv.style.position = 'relative'
 		
 		//canvases
+		//possible image to place
+		if (imageURL != undefined) {
+			this.imageCanvas = document.createElement('canvas');
+			this.imageCanvas.width = this.width;
+			this.imageCanvas.height = this.height;
+			this.imageCanvas.style.position = 'absolute';
+			this.imageCanvas.style.left = String(10 + 40) + "px";
+			this.imageCanvas.style.top = String(10) + "px";
+			this.imageCanvas.style['pointer-events'] = 'none';
+			this.refDiv.appendChild(this.imageCanvas);
+			var img = new Image();
+			img.src = imageURL;
+			var ctx = this.imageCanvas.getContext('2d');
+			var that = this;
+			img.onload = function() {
+				ctx.drawImage(img, that.width/2 - img.width/2, that.height/2 - img.height/2);
+			};
+		}
 		this.guidelineCanvas = document.createElement('canvas');
 		this.guidelineCanvas.width = this.width;
 		this.guidelineCanvas.height = this.height;
@@ -74,7 +104,6 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		this.canvas.style.position = 'absolute';
 		this.canvas.style.left = String(10 + 40) + 'px';
 		this.canvas.style.top = String(10) + 'px';
-		console.log(this.canvas.style);
 		this.refDiv.appendChild(this.canvas);
 
 		this.xAxisCanvas = document.createElement('canvas');
@@ -121,24 +150,102 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		form.style.left = String(10) + 'px';
 		form.style.top = String(this.height + 50) + 'px';
 		this.refDiv.appendChild(form);
+		
+		//set Axis form
+		if (this.userXAxis || this.userYAxis) {
+			this.axisForm = document.createElement('form');
+			var maxNumber = "999999";
+			var minNumber = "-999999";
+			var textWidth = "30px";
+			if (this.userXAxis) {
+				var minLabel = document.createElement('span');
+				minLabel.textContent = "xmin: ";
+				this.axisForm.appendChild(minLabel);
+				var xMin = document.createElement('input');
+				xMin.type = "number";
+				xMin.min = minNumber;
+				xMin.max = maxNumber;
+				xMin.name = "xMin";
+				xMin.style.width = textWidth;
+				this.axisForm.appendChild(xMin);
+				var maxLabel = document.createElement('span');
+				maxLabel.textContent = " xmax: ";
+				this.axisForm.appendChild(maxLabel);
+				var xMax = document.createElement('input');
+				xMax.min = minNumber;
+				xMax.max = maxNumber;
+				xMax.name = 'xMax';
+				xMax.style.width = textWidth;
+				this.axisForm.appendChild(xMax);
+				var stepLabel = document.createElement('span');
+				stepLabel.textContent = " xstep: ";
+				this.axisForm.appendChild(stepLabel);
+				var xStep = document.createElement('input');
+				xStep.min = minNumber;
+				xStep.max = maxNumber;
+				xStep.name = 'xStep';
+				xStep.style.width = textWidth;
+				this.axisForm.appendChild(xStep);
+
+			}
+			if (this.userYAxis) {
+				var minLabel = document.createElement('span');
+				minLabel.textContent = "ymin: ";
+				this.axisForm.appendChild(minLabel);
+				var yMin = document.createElement('input');
+				yMin.min = minNumber;
+				yMin.max = maxNumber;
+				yMin.name = "yMin";
+				yMin.style.width = textWidth;
+				this.axisForm.appendChild(yMin);
+				var maxLabel = document.createElement('span');
+				maxLabel.textContent = " ymax: ";
+				this.axisForm.appendChild(maxLabel);
+				var yMax = document.createElement('input');
+				yMax.min = maxNumber;
+				yMax.max = minNumber;
+				yMax.name = 'yMax';
+				yMax.style.width = textWidth;
+				this.axisForm.appendChild(yMax);
+				var stepLabel = document.createElement('span');
+				stepLabel.textContent = " ystep: ";
+				this.axisForm.appendChild(stepLabel);
+				var yStep = document.createElement('input');
+				yStep.min = minNumber;
+				yStep.max = maxNumber;
+				yStep.name = 'yStep';
+				yStep.style.width = textWidth;
+				this.axisForm.appendChild(yStep);
+			}
+			this.setAxesButton = document.createElement('input');
+			this.setAxesButton.type = 'button';
+			this.setAxesButton.value = "Set Axes";
+			this.axisForm.appendChild(this.setAxesButton);
+
+			this.axisForm.style.position = 'absolute';
+			this.axisForm.style.left = String(10) + 'px';
+			this.axisForm.style.top = String(this.height + 80) + 'px';
+			this.refDiv.appendChild(this.axisForm);
+		}
 
 		// post stuff
 		this.postForm = document.createElement('form');
 		this.submitButton = document.createElement('input');
 		this.submitButton.type = 'button';
 		this.submitButton.value = 'Submit';
+		this.submitButton.disabled = true;
 		this.postForm.appendChild(this.submitButton);
 		this.toggleAnswer = document.createElement('input');
 		this.toggleAnswer.type = 'button';
 		this.toggleAnswer.value = "Show Answer";
 		this.postForm.appendChild(this.toggleAnswer);
 		this.loadingImage = document.createElement('img');
-		this.loadingImage.src = 'loading.gif';
+		this.loadingImage.src = 'images/loading.gif';
 		this.loadingImage.style.height = "15px";
 		this.postForm.appendChild(this.loadingImage);
 		this.showSaving(false);
 		this.postForm.style.position = 'absolute';
-		this.postForm.style.left = String(200) + 'px';
+		this.postForm.style.left = String(this.width - 100) + 'px';
 		this.postForm.style.top = String(this.height + 50) + 'px';
 		this.refDiv.appendChild(this.postForm);
 	};
@@ -190,6 +297,11 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 			isErasing = false;
 		};
 
+		this.canvas.onmouseleave = function(e) {
+			isSketching = false;
+			isErasing = false;
+		};
+
 		this.canvas.onmousemove = function(e) {
 			if (isSketching) {
 				var inBetween = pointsBetween(lastX, lastY, e.layerX, e.layerY);
@@ -201,6 +313,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				that.refreshCanvases();
 				lastX = e.layerX;
 				lastY = e.layerY;
+				that.submitButton.disabled = false;
 			} else if (isErasing) {
 				mouseX = e.pageX - this.offsetLeft;
 				mouseY = e.pageY - this.offsetTop;
@@ -213,15 +326,14 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				that.refreshCanvases();
 				lastX = e.layerX;
 				lastY = e.layerY;
+				that.submitButton.disabled = false;
 			}
 		}
 		
-		console.log('getting data');
 		$.post("receiveData.py", {
 				'kerberosHash':that.kerberosHash,
 				'problemID':that.problemID
 			}, function(data, status) {
-			console.log("data problem " + that.problemID + " received");
 			if (status == 'success') {
 				that.extractServerData(data);
 			} else {
@@ -241,13 +353,21 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 			this.canvasImageData.data[i] = j.cData.data[i];
 		}
 		this.refreshCanvases();
+		this.xmin = j.axes[0];
+		this.xmax = j.axes[1];
+		this.xstep = j.axes[2];
+		this.ymin = j.axes[3];
+		this.ymax = j.axes[4];
+		this.ystep = j.axes[5];
+		this.setAxes(this.xmin, this.xmax, this.xstep, this.ymin, this.ymax, this.ystep);
 	};
 
 	this.setUpForm = function() {
 		var that = this;
 		this.submitButton.addEventListener("click", function(event) {
 			that.showSaving(true);
-			var saveData = JSON.stringify({cData: that.canvasImageData, recording: that.recordingArray});
+			this.disabled = true;
+			var saveData = JSON.stringify({cData: that.canvasImageData, recording: that.recordingArray, axes:[that.xmin, that.xmax,that.xstep,that.ymin,that.ymax,that.ystep]});
 			$.post("sendData.py", {
 				kerberosHash: that.kerberosHash,
 				problemID: that.problemID,
@@ -261,7 +381,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		});
 
 		this.resetButton.addEventListener("click", function(event) {
-			that.recordingArray = [];
+			that.submitButton.disabled = false;
 			var ctx = that.canvas.getContext('2d');
 			ctx.clearRect(0,0,that.canvas.width, that.canvas.height);
 			that.canvasImageData = ctx.createImageData(that.canvas.width, that.canvas.height);
@@ -276,7 +396,39 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				that.showAnswer(false);
 			}
 		});
+		
+		if (userXAxis || userYAxis) {	
+			this.setAxesButton.addEventListener("click", function(event) {
+				var c = confirm("Any drawings you made will not scale. Are you sure you want to set the axes?");
+				if (c) {
+					var names = {};
+					$.each($(that.axisForm).find('input'), function () {
+						names[this.name] = this.value;
+					});
+					// check that it contains valid values
+					var xmin = Number(names["xMin"]);
+					var xmax = Number(names["xMax"]);
+					var xstep = Number(names["xStep"]);
+					if (typeof xmin == "number" && typeof xmax == "number" && typeof xstep == "number" && xmax > xmin && xstep > 0) {
+						that.xmin = xmin - xstep/4;
+						that.xmax = xmax + xstep/4;
+						that.xstep = xstep;
+					}
+					var ymin = Number(names["yMin"]);
+					var ymax = Number(names["yMax"]);
+					var ystep = Number(names["yStep"]);
+					if (typeof ymin == "number" && typeof ymax == "number" && typeof ystep == "number" && ymax > ymin && ystep > 0) {
+						that.ymin = ymin - ystep/4;
+						that.ymax = ymax + ystep/4;
+						that.ystep = ystep;
+					}
+					that.setAxes(that.xmin, that.xmax, that.xstep, that.ymin, that.ymax, that.ystep);
+					that.recordChangeAxes(xmin, xmax, xstep, ymin, ymax, ystep);
+				}
+			});
+		}
 	}
+
 
 	this.setPixel = function (imageData, x,y,r,g,b,a) {
 		a = typeof a !== 'undefined' ? a : 256;
@@ -332,6 +484,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 	}
 
 	this.drawXAxisNumber = function(canvasX, realX) {
+		realX = (Math.round(realX/this.xstep)*this.xstep)
 		var ctx = this.xAxisCanvas.getContext('2d');
 		ctx.textAlign = 'center';
 		ctx.textBaseline = "hanging";
@@ -339,53 +492,35 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 	}
 	
 	this.drawYAxisNumber = function(canvasY, realY) {
+		realY = (Math.round(realY/this.ystep)*this.ystep)
 		var ctx = this.yAxisCanvas.getContext('2d');
 		ctx.textAlign = 'right';
 		ctx.textBaseline = 'middle';
 		ctx.fillText("" + realY, this.yAxisCanvas.width - 5, canvasY);
 	}
 
-	this.setAxes = function(xmin, xmax, xstep, ymin, ymax, ystep) {
-		//x axes
-		var w = this.guidelineCanvas.width,
-			h = this.guidelineCanvas.height;
+	this.setXAxis = function(xmin, xmax, xstep) {
+		var ctx = this.xAxisCanvas.getContext('2d');		
+
+		var w = this.guidelineCanvas.width;
 		var numXLines = (xmax-xmin)/xstep;
 		var cXStep = w/numXLines;
-		var numYLines = (ymax-ymin)/ystep;
-		var cYStep = h/numYLines;
 		var cXorigin = -xmin*w/(xmax-xmin);
-		var cYorigin = ymax*h/(ymax-ymin);
-		var x,y;
-		if (cYorigin > 1 && cYorigin < h-1) {
-			for (y = cYorigin - 1; y < cYorigin +2; y++) {
-				this.drawHorizontalGuideline(y, 50, 50, 50, 80);
-			}
-			for (y = cYorigin + cYStep; y < h; y += cYStep) {
-				this.drawHorizontalGuideline(y, 50, 50, 50, 80);
-				this.drawYAxisNumber(y, (cYorigin-y)/cYStep*ystep);
-			}
-			for (y = cYorigin - cYStep; y > 0; y -= cYStep) {
-				this.drawHorizontalGuideline(y, 50, 50, 50, 80);
-				this.drawYAxisNumber(y, (cYorigin-y)/cYStep*ystep);
-			}
-		} else {
-			for (y = 0; y <= h; y += cYStep) {
-				this.drawHorizontalGuideline(y, 50, 50, 50, 80);
-				this.drawYAxisNumber(y, (cYorigin-y)/cYStep*ystep);
-			}
-		}
-
+		var x, corX;
 		if (cXorigin > 1 && cXorigin < w-1) {
 			for (x = cXorigin - 1; x < cXorigin + 2; x++) {
-				this.drawVerticalGuideline(x, 0, 200, 200, 256);
+				corX = Math.round(x);
+				this.drawVerticalGuideline(corX, 0, 200, 200, 256);
 			}
 			for (x = cXorigin + cXStep; x < w; x += cXStep) {
-				this.drawVerticalGuideline(x, 0, 200, 200, 256);
-				this.drawXAxisNumber(x, (x-cXorigin)/cXStep*xstep);
+				corX = Math.round(x);
+				this.drawVerticalGuideline(corX, 0, 200, 200, 256);
+				this.drawXAxisNumber(corX, (x-cXorigin)/cXStep*xstep);
 			}
 			for (x = cXorigin - cXStep; x > 0; x -= cXStep) {
-				this.drawVerticalGuideline(x, 0, 200, 200, 256);
-				this.drawXAxisNumber(x, (x-cXorigin)/cXStep*xstep);
+				corX = Math.round(x);
+				this.drawVerticalGuideline(corX, 0, 200, 200, 256);
+				this.drawXAxisNumber(corX, (x-cXorigin)/cXStep*xstep);
 			}
 		} else {
 
@@ -394,11 +529,65 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				this.drawXAxisNumber(x, (x-cXorigin)/cXStep*xstep);
 			}
 		}
+	}
+
+	this.setYAxis = function(ymin, ymax, ystep) {
+		var h = this.guidelineCanvas.height;
+		var numYLines = (ymax-ymin)/ystep;
+		var cYStep = h/numYLines;
+		var cYorigin = ymax*h/(ymax-ymin);
+		var y, corY;
+		if (cYorigin > 1 && cYorigin < h-1) {
+			for (y = cYorigin - 1; y < cYorigin +2; y++) {
+				corY = Math.round(y);
+				this.drawHorizontalGuideline(corY, 50, 50, 50, 80);
+			}
+			for (y = cYorigin + cYStep; y < h; y += cYStep) {
+				corY = Math.round(y);
+				this.drawHorizontalGuideline(corY, 50, 50, 50, 80);
+				this.drawYAxisNumber(corY, (cYorigin-y)/cYStep*ystep);
+			}
+			for (y = cYorigin - cYStep; y > 0; y -= cYStep) {
+				corY = Math.round(y);
+				this.drawHorizontalGuideline(corY, 50, 50, 50, 80);
+				this.drawYAxisNumber(corY, (cYorigin-y)/cYStep*ystep);
+			}
+		} else {
+			for (y = 0; y <= h; y += cYStep) {
+				corY = Math.round(y);
+				this.drawHorizontalGuideline(corY, 50, 50, 50, 80);
+				this.drawYAxisNumber(corY, (cYorigin-y)/cYStep*ystep);
+			}
+		}
+	}
+
+	this.setAxes = function(xmin, xmax, xstep, ymin, ymax, ystep) {
+		//x axes
+		this.xmin = xmin;
+		this.xmax = xmax;
+		this.xstep = xstep;
+		this.ymin = ymin;
+		this.ymax = ymax;
+		this.ystep = ystep;
+		
+		var ctx = this.yAxisCanvas.getContext('2d');
+		ctx.clearRect(0, 0, this.yAxisCanvas.width, this.yAxisCanvas.height);
+		ctx = this.xAxisCanvas.getContext('2d');
+		ctx.clearRect(0, 0, this.xAxisCanvas.width, this.xAxisCanvas.height);
+
+		ctx = this.guidelineCanvas.getContext('2d');
+		ctx.clearRect(0, 0, this.guidelineCanvas.width, this.guidelineCanvas.height);
+		this.guidelineImageData = ctx.createImageData(this.guidelineCanvas.width, this.guidelineCanvas.height);
+
+		this.setYAxis(ymin, ymax, ystep);
+		this.setXAxis(xmin, xmax, xstep);
+		this.labelAxes(this.xlabel, this.ylabel, 12);
 		this.refreshCanvases();
-		this.recordChangeAxes(xmin, xmax, xstep, ymin, ymax, ystep);
 	}
 
 	this.labelAxes = function(xLabel, yLabel, fontSize) {
+		this.xlabel = xLabel;
+		this.ylabel = yLabel;
 		fontSize = typeof fontSize !== 'undefined' ? fontSize : 14;
 		fontSize = String(fontSize) + "px serif";
 		var ctx = this.xAxisCanvas.getContext('2d');

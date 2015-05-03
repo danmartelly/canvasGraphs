@@ -1,12 +1,13 @@
 #!/usr/bin/python
 import dataFuncs
 import os
+import hashlib
 import cgi
 import cgitb
 cgitb.enable()
 
 user = os.environ.get('SSL_CLIENT_S_DN_Email','').split('@')[0].strip()
-kerberosHash = hash(user)
+kerberosHash = "'" + hashlib.sha224(user).hexdigest() + "'"
 fullname = os.environ.get('SSL_CLIENT_S_DN_CN', user)
 
 print '''
@@ -28,7 +29,7 @@ print '''
 		var s;
 		s = new SketchInterface(%(kerberosHash)s, 1, document.getElementById("test"), 600, 300, document.getElementById('answer1'));
 		s.setAxes(-6, 6, 5, -5, 10, 1);	
-		s = new SketchInterface(%(kerberosHash)s, 2, document.getElementById("test2"), 600, 300, document.getElementById('answer2'));
+		s = new SketchInterface(%(kerberosHash)s, 2, document.getElementById("test2"), 600, 300, document.getElementById('answer2'), true, true);
 		s.setAxes(-1, 3, .5, -5, 10, 1);
 		s.labelAxes('xaxis', 'yaxis');
 
