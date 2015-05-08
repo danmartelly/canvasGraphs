@@ -23,6 +23,7 @@ print '''
 	<script src="sketchGraphs.js" text="javascript/text"></script>
 </head>
 <body>
+
 	%(navigationText)s
 	%(instructionText)s
 
@@ -31,21 +32,21 @@ print '''
 	%(question1Text)s
 	<h4>Teleport Model</h4>
 	<div id="teleportModel"></div>
-	<img id="teleportAnswer" src="images/lion.jpeg">
+	<img id="teleportAnswer" src="images/teleportModel.png">
 	<h4>Reset Model</h4>
 	<div id="resetModel"></div>
-	<img id="resetAnswer" src="images/lion.jpeg">
+	<img id="resetAnswer" src="images/resetModel.png">
 	<h4>Teleport Model 2</h4>
 	<div id="teleportModel2"></div>
-	<img id="teleportAnswer2" src="images/lion.jpeg">
+	<img id="teleportAnswer2" src="images/teleportModel2.png">
 	<h4>Reset Model 2</h4>
 	<div id="resetModel2"></div>
-	<img id="resetAnswer2" src="images/lion.jpeg">
+	<img id="resetAnswer2" src="images/resetModel2.png">
 
 	<br><hr>	
 	%(question2Text)s
 	<div id="coinFlips"></div>
-	<img id="coinFlipsAnswer" src="images/lion.jpeg"></div>
+	<img id="coinFlipsAnswer" src="images/coinFlipAnswer.png">
 </body>
 <script text="javascript/text">
 	window.onload = function () {
@@ -73,7 +74,7 @@ print '''
 		trans.push(s);
 
 		for (var i = 0; i < trans.length; i++) {
-			trans[i].setAxes(-.5, 10.5, 1, -1, 10, 20);
+			trans[i].setAxes(-.5, 9.5, 1, -1, 10, 20);
 			trans[i].labelAxes("State Number", "Probability");
 		}
 
@@ -87,4 +88,4 @@ print '''
 	}
 </script>
 </html>
-''' % {'kerberosHash':kerberosHash, 'navigationText':navigationText, 'instructionText': instructionText, 'question1Text': question1Text, 'question2Text':question2Text}
+''' % {'user':user, 'kerberosHash':kerberosHash, 'navigationText':navigationText, 'instructionText': instructionText, 'question1Text': question1Text, 'question2Text':question2Text}

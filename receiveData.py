@@ -15,6 +15,6 @@ if all([k in form for k in ['kerberosHash', 'problemID']]):
 %(data)s''' % {'data':data}
 else:
     print '''
-error. Missing data. Only received %(formKeys)s''' % {'formKeys':form.keys()}
+{"error":'error. Missing data. Only received %(formKeys)s'}''' % {'formKeys':form.keys()}
 
 

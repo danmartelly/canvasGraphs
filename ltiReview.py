@@ -29,13 +29,13 @@ print '''
 
 	%(basicPolesText1)s
 	<div id="poles1"></div>
-	<img id="polesAnswer1" src="images/lion.jpeg">
+	<img id="polesAnswer1" src="images/polesAnswer1.png">
 	%(basicPolesText2)s
 	<div id="poles2"></div>
-	<img id="polesAnswer2" src="images/lion.jpeg">
+	<img id="polesAnswer2" src="images/polesAnswer2.png">
 	%(basicPolesText3)s
 	<div id="poles3"></div>
-	<img id="polesAnswer3" src="images/lion.jpeg">
+	<img id="polesAnswer3" src="images/polesAnswer3.png">
 
 </body>
 <script text="javascript/text">

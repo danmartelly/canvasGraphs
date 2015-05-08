@@ -17,7 +17,7 @@ success. Data received: %(formKeys)s
 ''' % {'formKeys':form.keys()}
 else:
     print '''
-error. Missing data. Only received %(formKeys)s
+{"error": 'Missing data. Only received %(formKeys)s'}
 ''' % {'formKeys':form.keys()}
 
 

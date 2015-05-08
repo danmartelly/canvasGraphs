@@ -50,6 +50,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 	this.submitButton = null;
 	this.toggleAnswer = null;
 	this.loadingImage = null;
+	this.submittedText = null;
 	this.userXAxis = userXAxis;
 	this.userYAxis = userYAxis;
 	this.axisForm = null;
@@ -63,10 +64,11 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 	this.ystep = null;
 	this.xlabel = "";
 	this.ylabel = "";
+	this.shouldWarnAxes = false;
 
 	this.makeElements = function() {
 		this.showAnswer(false);
-		this.refDiv.style.width = String(this.width + 70) + 'px';
+		this.refDiv.style.width = String(this.width + 150) + 'px';
 		this.refDiv.style.height = String(this.height + 100) + 'px';
 		this.refDiv.style.position = 'relative'
 		
@@ -153,10 +155,11 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		
 		//set Axis form
 		if (this.userXAxis || this.userYAxis) {
+			this.shouldWarnAxes = true;
 			this.axisForm = document.createElement('form');
 			var maxNumber = "999999";
 			var minNumber = "-999999";
-			var textWidth = "30px";
+			var textWidth = "45px";
 			if (this.userXAxis) {
 				var minLabel = document.createElement('span');
 				minLabel.textContent = "xmin: ";
@@ -172,6 +175,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				maxLabel.textContent = " xmax: ";
 				this.axisForm.appendChild(maxLabel);
 				var xMax = document.createElement('input');
+				xMax.type = "number";
 				xMax.min = minNumber;
 				xMax.max = maxNumber;
 				xMax.name = 'xMax';
@@ -181,6 +185,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				stepLabel.textContent = " xstep: ";
 				this.axisForm.appendChild(stepLabel);
 				var xStep = document.createElement('input');
+				xStep.type = "number";
 				xStep.min = minNumber;
 				xStep.max = maxNumber;
 				xStep.name = 'xStep';
@@ -193,6 +198,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				minLabel.textContent = "ymin: ";
 				this.axisForm.appendChild(minLabel);
 				var yMin = document.createElement('input');
+				yMin.type = "number";
 				yMin.min = minNumber;
 				yMin.max = maxNumber;
 				yMin.name = "yMin";
@@ -202,6 +208,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				maxLabel.textContent = " ymax: ";
 				this.axisForm.appendChild(maxLabel);
 				var yMax = document.createElement('input');
+				yMax.type = "number";
 				yMax.min = maxNumber;
 				yMax.max = minNumber;
 				yMax.name = 'yMax';
@@ -211,6 +218,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				stepLabel.textContent = " ystep: ";
 				this.axisForm.appendChild(stepLabel);
 				var yStep = document.createElement('input');
+				yStep.type = "number";
 				yStep.min = minNumber;
 				yStep.max = maxNumber;
 				yStep.name = 'yStep';
@@ -244,8 +252,12 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		this.loadingImage.style.height = "15px";
 		this.postForm.appendChild(this.loadingImage);
 		this.showSaving(false);
+		this.submittedText = document.createElement('span');
+		this.submittedText.innerHTML = " Submission Received";
+		this.submittedText.style.display = "none";
+		this.postForm.appendChild(this.submittedText);
 		this.postForm.style.position = 'absolute';
-		this.postForm.style.left = String(this.width - 100) + 'px';
+		this.postForm.style.left = String(350) + 'px';
 		this.postForm.style.top = String(this.height + 50) + 'px';
 		this.refDiv.appendChild(this.postForm);
 	};
@@ -279,6 +291,10 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 
 		var that = this;
 		this.canvas.onmousedown = function(e) {
+			if (that.shouldWarnAxes) {
+				alert("Please set valid your axes first.");
+				return;
+			}
 			if (that.pencilRadio.checked) {
 				isSketching = true;
 				isErasing = false;
@@ -314,6 +330,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				lastX = e.layerX;
 				lastY = e.layerY;
 				that.submitButton.disabled = false;
+				that.submittedText.style.display = "none";
 			} else if (isErasing) {
 				mouseX = e.pageX - this.offsetLeft;
 				mouseY = e.pageY - this.offsetTop;
@@ -329,11 +346,11 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 				that.submitButton.disabled = false;
 			}
 		}
-		
+
 		$.post("receiveData.py", {
 				'kerberosHash':that.kerberosHash,
 				'problemID':that.problemID
-			}, function(data, status) {
+			}).done(function(data, status) {
 			if (status == 'success') {
 				that.extractServerData(data);
 			} else {
@@ -344,6 +361,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 
 	this.extractServerData = function(string) {
 		var j = JSON.parse(string);
+		console.log(j);
 		if (j == null) {
 			return; // do nothing
 		}
@@ -366,22 +384,26 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		var that = this;
 		this.submitButton.addEventListener("click", function(event) {
 			that.showSaving(true);
+			that.submittedText.style.display = "none";
 			this.disabled = true;
-			var saveData = JSON.stringify({cData: that.canvasImageData, recording: that.recordingArray, axes:[that.xmin, that.xmax,that.xstep,that.ymin,that.ymax,that.ystep]});
+			var tempCanvasData = {width: that.canvasImageData.width, height: that.canvasImageData.height, data:that.canvasImageData.data};
+			var saveData = JSON.stringify({cData: tempCanvasData, recording: that.recordingArray, axes:[that.xmin, that.xmax,that.xstep,that.ymin,that.ymax,that.ystep]});
 			$.post("sendData.py", {
 				kerberosHash: that.kerberosHash,
 				problemID: that.problemID,
 				saveData: saveData
-			},
+			}).done(
 			function(data, status){
 				console.log(" Status: " + status + " for problemID: " + that.problemID);
 				that.showSaving(false);
+				that.submittedText.style.display = "inline";
 			});
 			console.log('doing swell');
 		});
 
 		this.resetButton.addEventListener("click", function(event) {
 			that.submitButton.disabled = false;
+			that.submittedText.style.display = "none";
 			var ctx = that.canvas.getContext('2d');
 			ctx.clearRect(0,0,that.canvas.width, that.canvas.height);
 			that.canvasImageData = ctx.createImageData(that.canvas.width, that.canvas.height);
@@ -391,6 +413,13 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 			if (this.value == "Show Answer") {
 				this.value = "Hide Answer";
 				that.showAnswer(true);
+				var d = new Date();
+				var t = d.getTime();
+				var newObj = {time:t, tool:"viewAnswer"};
+				that.recordingArray.push(newObj);
+				if (!that.submitButton.disabled) {
+					that.submitButton.click();
+				}
 			} else {
 				this.value = "Show Answer";
 				that.showAnswer(false);
@@ -413,6 +442,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 						that.xmin = xmin - xstep/4;
 						that.xmax = xmax + xstep/4;
 						that.xstep = xstep;
+						that.shouldWarnAxes = false;
 					}
 					var ymin = Number(names["yMin"]);
 					var ymax = Number(names["yMax"]);
@@ -421,6 +451,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 						that.ymin = ymin - ystep/4;
 						that.ymax = ymax + ystep/4;
 						that.ystep = ystep;
+						that.shouldWarnAxes = false;
 					}
 					that.setAxes(that.xmin, that.xmax, that.xstep, that.ymin, that.ymax, that.ystep);
 					that.recordChangeAxes(xmin, xmax, xstep, ymin, ymax, ystep);
@@ -461,7 +492,7 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 	this.recordChangeAxes = function(xmin, xmax, xstep, ymin, ymax, ystep) {
 		var d = new Date();
 		var t = d.getTime();
-		var newObj = {xmin:xmin, xmax:xmax, xstep:xstep,
+		var newObj = {time:t, tool:'setAxes', xmin:xmin, xmax:xmax, xstep:xstep,
 				ymin:ymin, ymax:ymax, ystep:ystep};
 		this.recordingArray.push(newObj);
 	}
@@ -488,7 +519,14 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		var ctx = this.xAxisCanvas.getContext('2d');
 		ctx.textAlign = 'center';
 		ctx.textBaseline = "hanging";
-		ctx.fillText("" + realX, canvasX, 5);
+		var decimalPlaces = Math.ceil(Math.log(this.ystep)/Math.log(10));
+		if (decimalPlaces < 0) {
+			decimalPlaces = -Math.floor(decimalPlaces) + 1;
+		} else {
+			decimalPlaces = 1;
+		}
+
+		ctx.fillText(parseFloat(realX).toFixed(decimalPlaces), canvasX, 5);
 	}
 	
 	this.drawYAxisNumber = function(canvasY, realY) {
@@ -496,7 +534,13 @@ function SketchInterface(kerberosHash, problemID, refDiv, width, height, answerE
 		var ctx = this.yAxisCanvas.getContext('2d');
 		ctx.textAlign = 'right';
 		ctx.textBaseline = 'middle';
-		ctx.fillText("" + realY, this.yAxisCanvas.width - 5, canvasY);
+		var decimalPlaces = Math.ceil(Math.log(this.ystep)/Math.log(10));
+		if (decimalPlaces < 0) {
+			decimalPlaces = -Math.floor(decimalPlaces) + 1;
+		} else {
+			decimalPlaces = 1;
+		}
+		ctx.fillText(parseFloat(realY).toFixed(decimalPlaces), this.yAxisCanvas.width - 5, canvasY);
 	}
 
 	this.setXAxis = function(xmin, xmax, xstep) {
